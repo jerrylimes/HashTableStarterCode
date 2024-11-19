@@ -1,3 +1,7 @@
+// Name: Jerry Li
+// Computing ID: mjs9qs
+// Homework Name: HashTable.java
+// Resources used: https://www.geeksforgeeks.org/implementing-our-own-hash-table-with-separate-chaining-in-java/ provided inspiration
 package hash;
 
 /**

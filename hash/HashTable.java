@@ -38,8 +38,14 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
 
     public HashTable(int capacity) {  // constructor sets capacity to given value
         /* TODO: IMPLEMENT THIS METHOD */
+        /* Initialize the table */
         this.table = new ArrayList<>(capacity);
+        /* Updates size */
         size = 0;
+        /* Create empty buckets */
+        for (int i = 0; i < capacity; i++) {
+            table.add(null);
+        }
         /*
          * Here are some hints about how to allocate memory for your hash table.
          * If you're using an array, it might look like this:
@@ -58,28 +64,42 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
     @Override
     public void insert(K key, V value) {
         /* TODO: IMPLEMENT THIS METHOD */
+        /* Get the correct index for insertion */
         int indexOfKey = indexInHashTable(key);
-        int hashCode = hashResults(key);
+        /* Get the first thing in the bucket */
         HashNode<K, V> container = table.get(indexOfKey);
         while (container != null) {
-            if (container.getKey().equals(key) && container.hashCode() == hashCode) {
+            if (container.getKey().equals(key)) {
+                /* If the key is present, change its value */
                 container.setValue(value);
             }
             container = container.next;
         }
+        /* Updates size */
         size++;
+        /* If the key is not present, once again, get the appropriate bucket for insertion */
         container = table.get(indexOfKey);
+        /* Create the node */
         HashNode<K, V> insertNode = new HashNode<>(key, value);
+        /* Inserting into the head of the list by first connecting the next pointer of the node for insertion to the original head */
         insertNode.next = container;
+        /* Update the ArrayList with the new head */
         table.set(indexOfKey, insertNode);
+        /* Rehash the table if the load factor is greater than or equal to 0.7 */
         if ((1.0 * size) / currentCapacity >= 0.7) {
+            /* Store the current table temporarily */
             ArrayList<HashNode<K, V>> transfer = table;
+            /* Clear the table */
             table = new ArrayList<>();
+            /* Double its capacity */
             currentCapacity *= 2;
+            /* Updates size */
             size = 0;
-            for (int i = 0; i < currentCapacity; i++)
+            /* Create empty buckets */
+            for (int i = 0; i < currentCapacity; i++) {
                 table.add(null);
-
+            }
+            /* Recursively insert the original nodes by traversing the ArrayList and going through every bucket in the list */
             for (HashNode<K, V> headNode : transfer) {
                 while (headNode != null) {
                     insert(headNode.getKey(), headNode.getValue());
@@ -92,13 +112,17 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
     @Override
     public V retrieve(K key) {
         /* TODO: IMPLEMENT THIS METHOD */
+        /* Get the correct index for retrieval */
         int indexOfKey = indexInHashTable(key);
-        int hashCode = hashResults(key);
+        /* Get the first thing in the bucket */
         HashNode<K, V> firstNode = table.get(indexOfKey);
         while (firstNode != null) {
-            if (firstNode.getKey().equals(key) && firstNode.hashCode() == hashCode) {
+            /* Find the key */
+            if (firstNode.getKey().equals(key)) {
+                /* Return the value */
                 return firstNode.getValue();
             }
+            /* Move on to the next node */
             firstNode = firstNode.next;
         }
         return null;
@@ -107,15 +131,20 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
     @Override
     public boolean contains(K key) {
         /* TODO: IMPLEMENT THIS METHOD */
+        /* Get the correct index for inquiry */
         int indexOfKey = indexInHashTable(key);
-        int hashCode = hashResults(key);
+        /* Get the first thing in the bucket */
         HashNode<K, V> firstNode = table.get(indexOfKey);
         while (firstNode != null) {
-            if (firstNode.getKey().equals(key) && firstNode.hashCode() == hashCode) {
+            /* Find the key */
+            if (firstNode.getKey().equals(key)) {
+                /* From SimpleMap: only return true if this key is already mapped to a value */
                 if (firstNode.getValue() != null) {
+                    /* Return contains or not */
                     return true;
                 }
             }
+            /* Move on to the next node */
             firstNode = firstNode.next;
         }
         return false;
@@ -124,23 +153,22 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
     @Override
     public void remove(K key) {
         /* TODO: IMPLEMENT THIS METHOD */
+        /* Get the correct index for removal */
         int indexOfKey = indexInHashTable(key);
-        int hashCode = hashResults(key);
+        /* Get the first thing in the bucket */
         HashNode<K, V> firstNode = table.get(indexOfKey);
+        /* Create a temporary node that stores the thing before the element we intend to delete */
         HashNode<K, V> prevNode = null;
         while (firstNode != null) {
-            if (firstNode.getKey().equals(key) && hashCode == firstNode.hashCode()) {
-                break;
+            if (firstNode.getKey().equals(key)) {
+                firstNode.setValue(null);
             }
+            /* Iterate throughout the linked hash nodes */
             prevNode = firstNode;
             firstNode = firstNode.next;
         }
+        /* Update size */
         size--;
-        if (prevNode != null) {
-            prevNode.next = firstNode.next;
-        } else {
-            table.set(indexOfKey, firstNode.next);
-        }
     }
 
     /* custom methods */
@@ -153,15 +181,25 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
      */
     private int indexInHashTable(K key) {
         int hashResult = hashResults(key);
-        int indexOfKey = hashResult % size;
+        int indexOfKey = hashResult % currentCapacity;
         if (indexOfKey < 0) {
             indexOfKey *= -1;
         }
         return indexOfKey;
     }
 
+    /**
+     * Calls the Java default HashCode method and preserves the hash code.
+     *
+     * @param key The key needed to be hashed.
+     * @return The hash code of the given key.
+     */
     private final int hashResults(K key) {
         return Objects.hashCode(key);
+    }
+
+    public void resize(){
+        
     }
 
     /*

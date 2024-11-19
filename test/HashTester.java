@@ -21,7 +21,7 @@ public class HashTester {
 
             /* Make two hashmaps */
             java.util.HashMap<Account, Person > cmp = new java.util.HashMap<>();
-            hash.HashTableQuadProb<Account, Person> stud = new hash.HashTableQuadProb<>();
+            hash.HashTable<Account, Person> stud = new hash.HashTable<>();
 
             HashSet<String> people = populatePeople();
 

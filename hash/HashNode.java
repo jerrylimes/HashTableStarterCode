@@ -1,3 +1,7 @@
+// Name: Jerry Li
+// Computing ID: mjs9qs
+// Homework Name: HashTable.java
+// Resources used: None
 package hash;
 
 
