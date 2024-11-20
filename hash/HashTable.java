@@ -72,6 +72,7 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
             if (container.getKey().equals(key)) {
                 /* If the key is present, change its value */
                 container.setValue(value);
+                return;
             }
             container = container.next;
         }
@@ -86,11 +87,11 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
         /* Update the ArrayList with the new head */
         table.set(indexOfKey, insertNode);
         /* Rehash the table if the load factor is greater than or equal to 0.7 */
-        if ((1.0 * size) / currentCapacity >= 0.7) {
+        if ((1.0 * size) / currentCapacity >= 0.75) {
             /* Store the current table temporarily */
             ArrayList<HashNode<K, V>> transfer = table;
             /* Clear the table */
-            table = new ArrayList<>();
+            table = new ArrayList<>(currentCapacity * 2);
             /* Double its capacity */
             currentCapacity *= 2;
             /* Updates size */
@@ -159,6 +160,8 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
         HashNode<K, V> firstNode = table.get(indexOfKey);
         /* Create a temporary node that stores the thing before the element we intend to delete */
         HashNode<K, V> prevNode = null;
+        /* Update size */
+        size--;
         while (firstNode != null) {
             if (firstNode.getKey().equals(key)) {
                 firstNode.setValue(null);
@@ -167,8 +170,6 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
             prevNode = firstNode;
             firstNode = firstNode.next;
         }
-        /* Update size */
-        size--;
     }
 
     /* custom methods */
