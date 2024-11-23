@@ -4,11 +4,9 @@
 // Resources used: None
 package hash;
 
-
 @SuppressWarnings("unchecked")
 public class HashNode<K, V> {
 
-    public HashNode<K,V> next;
     private K key;
     private V value;
 

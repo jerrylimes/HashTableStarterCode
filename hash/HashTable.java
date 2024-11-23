@@ -5,6 +5,7 @@
 package hash;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Objects;
 
 /**
@@ -28,7 +29,7 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
      */
 
     /* YOU WILL LIKELY WANT MORE PRIVATE VARIABLES HERE */
-    private ArrayList<HashNode<K, V>> table;
+    private ArrayList<LinkedList<HashNode<K, V>>> table;
     private int size;
 
 
@@ -44,7 +45,8 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
         size = 0;
         /* Create empty buckets */
         for (int i = 0; i < capacity; i++) {
-            table.add(null);
+            LinkedList<HashNode<K, V>> emptyContainers = new LinkedList<>();
+            table.add(emptyContainers);
         }
         /*
          * Here are some hints about how to allocate memory for your hash table.
@@ -67,14 +69,13 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
         /* Get the correct index for insertion */
         int indexOfKey = indexInHashTable(key);
         /* Get the first thing in the bucket */
-        HashNode<K, V> container = table.get(indexOfKey);
-        while (container != null) {
-            if (container.getKey().equals(key)) {
+        LinkedList<HashNode<K, V>> container = table.get(indexOfKey);
+        for (HashNode<K, V> kvHashNode : container) {
+            if (kvHashNode.getKey().equals(key)) {
                 /* If the key is present, change its value */
-                container.setValue(value);
+                kvHashNode.setValue(value);
                 return;
             }
-            container = container.next;
         }
         /* Updates size */
         size++;
@@ -83,30 +84,10 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
         /* Create the node */
         HashNode<K, V> insertNode = new HashNode<>(key, value);
         /* Inserting into the head of the list by first connecting the next pointer of the node for insertion to the original head */
-        insertNode.next = container;
-        /* Update the ArrayList with the new head */
-        table.set(indexOfKey, insertNode);
+        container.add(0, insertNode);
         /* Rehash the table if the load factor is greater than or equal to 0.7 */
         if ((1.0 * size) / currentCapacity >= 0.75) {
-            /* Store the current table temporarily */
-            ArrayList<HashNode<K, V>> transfer = table;
-            /* Clear the table */
-            table = new ArrayList<>(currentCapacity * 2);
-            /* Double its capacity */
-            currentCapacity *= 2;
-            /* Updates size */
-            size = 0;
-            /* Create empty buckets */
-            for (int i = 0; i < currentCapacity; i++) {
-                table.add(null);
-            }
-            /* Recursively insert the original nodes by traversing the ArrayList and going through every bucket in the list */
-            for (HashNode<K, V> headNode : transfer) {
-                while (headNode != null) {
-                    insert(headNode.getKey(), headNode.getValue());
-                    headNode = headNode.next;
-                }
-            }
+            resize();
         }
     }
 
@@ -116,15 +97,13 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
         /* Get the correct index for retrieval */
         int indexOfKey = indexInHashTable(key);
         /* Get the first thing in the bucket */
-        HashNode<K, V> firstNode = table.get(indexOfKey);
-        while (firstNode != null) {
+        LinkedList<HashNode<K, V>> firstNode = table.get(indexOfKey);
+        for (int i = 0; i < firstNode.size(); i++) {
             /* Find the key */
-            if (firstNode.getKey().equals(key)) {
+            if (firstNode.get(i).getKey().equals(key)) {
                 /* Return the value */
-                return firstNode.getValue();
+                return firstNode.get(i).getValue();
             }
-            /* Move on to the next node */
-            firstNode = firstNode.next;
         }
         return null;
     }
@@ -135,18 +114,16 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
         /* Get the correct index for inquiry */
         int indexOfKey = indexInHashTable(key);
         /* Get the first thing in the bucket */
-        HashNode<K, V> firstNode = table.get(indexOfKey);
-        while (firstNode != null) {
+        LinkedList<HashNode<K, V>> firstNode = table.get(indexOfKey);
+        for (int i = 0; i < firstNode.size(); i++) {
             /* Find the key */
-            if (firstNode.getKey().equals(key)) {
+            if (firstNode.get(i).getKey().equals(key)) {
                 /* From SimpleMap: only return true if this key is already mapped to a value */
-                if (firstNode.getValue() != null) {
+                if (firstNode.get(i).getValue() != null) {
                     /* Return contains or not */
                     return true;
                 }
             }
-            /* Move on to the next node */
-            firstNode = firstNode.next;
         }
         return false;
     }
@@ -157,18 +134,14 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
         /* Get the correct index for removal */
         int indexOfKey = indexInHashTable(key);
         /* Get the first thing in the bucket */
-        HashNode<K, V> firstNode = table.get(indexOfKey);
-        /* Create a temporary node that stores the thing before the element we intend to delete */
-        HashNode<K, V> prevNode = null;
+        LinkedList<HashNode<K, V>> container = table.get(indexOfKey);
         /* Update size */
-        size--;
-        while (firstNode != null) {
-            if (firstNode.getKey().equals(key)) {
-                firstNode.setValue(null);
+        for (int i = 0; i < container.size(); i++) {
+            if (container.get(i).getKey().equals(key)) {
+                HashNode<K, V> nodeToRemove = new HashNode<>(key, null);
+                container.remove(nodeToRemove);
+                size--;
             }
-            /* Iterate throughout the linked hash nodes */
-            prevNode = firstNode;
-            firstNode = firstNode.next;
         }
     }
 
@@ -199,8 +172,26 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
         return Objects.hashCode(key);
     }
 
-    public void resize(){
-        
+    public void resize() {
+        /* Store the current table temporarily */
+        ArrayList<LinkedList<HashNode<K, V>>> transfer = table;
+        /* Clear the table */
+        table = new ArrayList<>(currentCapacity * 2);
+        /* Double its capacity */
+        currentCapacity *= 2;
+        /* Updates size */
+        size = 0;
+        /* Create empty buckets */
+        for (int i = 0; i < currentCapacity; i++) {
+            LinkedList<HashNode<K, V>> emptyContainers = new LinkedList<>();
+            table.add(emptyContainers);
+        }
+        /* Recursively insert the original nodes by traversing the ArrayList and going through every bucket in the list */
+        for (LinkedList<HashNode<K, V>> oldContainer : transfer) {
+            for (HashNode<K, V> headNode : oldContainer) {
+                insert(headNode.getKey(), headNode.getValue());
+            }
+        }
     }
 
     /*
@@ -227,12 +218,12 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
          *    Best to use System.out.print() and not println() so they're all on one line.
          * c) At the end of that loop, do System.out.println() to print a new line.
          */
-        System.out.println("Not yet implemented...");
-        HashNode<K, V> firstNode = table.get(idx);
+        /* System.out.println("Not yet implemented..."); */
+        LinkedList<HashNode<K, V>> firstNode = table.get(idx);
         if (firstNode != null) {
-            while (firstNode != null) {
-                System.out.print(firstNode.getKey() + " ");
-                System.out.print(firstNode.getValue());
+            for (HashNode<K, V> kvHashNode : firstNode) {
+                System.out.print(kvHashNode.getKey() + " ");
+                System.out.print(kvHashNode.getValue());
                 System.out.println();
             }
         } else {
@@ -241,4 +232,3 @@ public class HashTable<K, V> implements SimpleMap<K, V> {
     }
 
 }
-
